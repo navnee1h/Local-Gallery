@@ -6,6 +6,6 @@
 Here are some screenshots of the project:
 
 
-![Main Interface](https://github.com/navnee1h/Local-Galllery/blob/main/screenshots/1.png)
-![Main Interface](https://github.com/navnee1h/Local-Galllery/blob/main/screenshots/2.png)
-![Main Interface](https://github.com/navnee1h/Local-Galllery/blob/main/screenshots/3.png)
+![Main Interface](https://github.com/navnee1h/Local-Gallery/blob/main/screenshots/1.png)
+![Main Interface](https://github.com/navnee1h/Local-Gallery/blob/main/screenshots/2.png)
+![Main Interface](https://github.com/navnee1h/Local-Gallery/blob/main/screenshots/3.png)
