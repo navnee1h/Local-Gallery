@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Gallery</title>
+    <style>
+        /* Your CSS styles here */
+        /* Style for the image container */
+.image-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: -5px; /* Negative margin to counteract padding */
+}
+
+/* Style for individual images */
+.image-container img {
+    height: 200px; /* Adjust the height as needed */
+    width: auto; /* Let the width adjust automatically based on the aspect ratio */
+    margin: 5px; /* Adjust spacing between images */
+    cursor: pointer; /* Change cursor to pointer when hovering over image */
+    transition: transform 0.3s ease; /* Add transition for smooth animation */
+    -webkit-user-select: none; /* Disable image selection */
+    -moz-user-select: none; /* Disable image selection */
+    -ms-user-select: none; /* Disable image selection */
+    user-select: none; /* Disable image selection */
+}
+
+/* Style for the full-size image overlay */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none; /* Initially hidden */
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(10px); /* Apply blur effect to the background */
+    background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    transition: background 0.3s ease, backdrop-filter 0.3s ease; /* Add transition for smoother background change */
+}
+
+/* Style for the carousel */
+.carousel {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.overlay img {
+    max-width: 90%; /* Adjust the width of the full-size image */
+    max-height: 90%; /* Adjust the height of the full-size image */
+    transition: transform 0.2s ease, opacity 0.2s ease; /* Add transition for smooth animation */
+}
+
+.blurred {
+    filter: blur(1px); /* Blur effect for background images */
+    transition: filter 0.2s ease; /* Add transition for smoother blur effect */
+}
+
+/* CSS for fade-in and fade-out animations */
+.fade-in {
+    animation: fadeIn 0.3s forwards;
+}
+
+.fade-out {
+    animation: fadeOut 0.2s forwards; /* Decrease the duration of fade-out animation */
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+/* Style for individual images */
+.image-container img {
+    height: 200px; /* Adjust the height as needed */
+    width: auto; /* Let the width adjust automatically based on the aspect ratio */
+    margin: 5px; /* Adjust spacing between images */
+    cursor: pointer; /* Change cursor to pointer when hovering over image */
+    transition: transform 0.3s ease; /* Add transition for smooth animation */
+    -webkit-user-select: none; /* Disable image selection */
+    -moz-user-select: none; /* Disable image selection */
+    -ms-user-select: none; /* Disable image selection */
+    user-select: none; /* Disable image selection */
+    -webkit-touch-callout: none; /* Disable callout menu on touch devices */
+    -webkit-tap-highlight-color: transparent; /* Prevent blue selection highlight */
+}
+
+/* Style for the blur effect */
+.blur {
+    filter: blur(0.8px); /* Decrease the blur amount */
+    transition: filter 0.3s ease; /* Decrease the transition duration */
+}
+    </style>
+
+
+</head>
+<body>
+<div class="image-container" id="imageContainer">
+    <!-- Images will be dynamically loaded here -->
+</div>
+<!-- Full-size image overlay -->
+<div class="overlay" id="overlay">
+    <div class="carousel" id="carousel">
+        <img id="fullImage" src="" alt="Full Image">
+    </div>
+</div>
+<script>
+    let images = []; // Array to store image URLs
+    let currentIndex = 0; // Index of the current image
+    let startX = 0; // Variable to store the start position of a touch
+
+    window.onload = function () {
+        fetchAndDisplayImages(); // Initial fetch and display
+        setInterval(fetchAndDisplayImages, 2000); // Polling every 2 seconds
+    };
+
+    function fetchAndDisplayImages() {
+        fetch('/images')
+            .then(response => response.json())
+            .then(data => {
+                // Check for additions or deletions
+                if (!arraysAreEqual(images, data)) {
+                    images = data;
+                    displayGallery();
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching images:', error);
+            });
+    }
+
+    function arraysAreEqual(arr1, arr2) {
+        if (arr1.length !== arr2.length) return false;
+        for (let i = 0; i < arr1.length; i++) {
+            if (arr1[i] !== arr2[i]) return false;
+        }
+        return true;
+    }
+
+    function displayGallery() {
+        // Clear the existing gallery
+        document.getElementById('imageContainer').innerHTML = '';
+        // Rebuild the gallery with updated images
+        let imageContainer = document.getElementById('imageContainer');
+        images.forEach(image => {
+            let img = document.createElement('img');
+            img.src = 'low_quality_placeholder.jpg'; // Placeholder image URL
+            img.setAttribute('data-src', '/img/' + image); // High-resolution image URL
+            img.classList.add('lazy');
+            img.addEventListener('click', function () {
+                currentIndex = images.indexOf(image);
+                showFullImage(image);
+            });
+            img.addEventListener('contextmenu', function (event) {
+                event.preventDefault(); // Prevent context menu from appearing
+            });
+            if ('ontouchstart' in window) {
+                // For touch devices, apply the blur effect on tap
+                img.addEventListener('touchstart', function () {
+                    this.classList.add('blur'); // Apply blur effect
+                    setTimeout(() => {
+                        this.classList.remove('blur'); // Remove blur effect after 0.5 seconds
+                    }, 500);
+                });
+            }
+            imageContainer.appendChild(img);
+        });
+        // Lazy load images when they come into the viewport
+        const lazyImages = document.querySelectorAll('.lazy');
+        const lazyLoad = target => {
+            const io = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        img.src = img.dataset.src;
+                        img.classList.remove('lazy');
+                        observer.disconnect();
+                    }
+                });
+            });
+            io.observe(target);
+        };
+        lazyImages.forEach(lazyLoad);
+    }
+
+    function showFullImage(image) {
+        let fullImage = document.getElementById('fullImage');
+        fullImage.style.opacity = 0;
+        setTimeout(() => {
+            fullImage.src = '/img/' + image;
+            let overlay = document.getElementById('overlay');
+            overlay.style.display = 'flex';
+            document.body.style.overflow = 'hidden'; // Disable scrolling when overlay is shown
+            // Apply fade-in animation
+            fullImage.classList.remove('fade-out');
+            fullImage.classList.add('fade-in');
+            setTimeout(function () {
+                fullImage.style.transform = 'scale(1)';
+                fullImage.style.opacity = 1;
+            }, 50); // Delay for smoother transition
+            // Add touch event listeners for swipe gestures
+            overlay.addEventListener('touchstart', handleTouchStart, false);
+            overlay.addEventListener('touchmove', handleTouchMove, false);
+            // Add event listener for keydown events
+            document.addEventListener('keydown', handleKeyDown);
+        }, 200);
+    }
+
+    function hideFullImage() {
+        let fullImage = document.getElementById('fullImage');
+        // Apply fade-out animation
+        fullImage.classList.remove('fade-in');
+        fullImage.classList.add('fade-out');
+        setTimeout(function () {
+            let overlay = document.getElementById('overlay');
+            overlay.style.display = 'none';
+            document.body.style.overflow = 'auto'; // Enable scrolling when overlay is hidden
+        }, 200); // Delay to match fade-out animation duration
+        // Remove touch event listeners
+        overlay.removeEventListener('touchstart', handleTouchStart, false);
+        overlay.removeEventListener('touchmove', handleTouchMove, false);
+        // Remove event listener for keydown events
+        document.removeEventListener('keydown', handleKeyDown);
+    }
+
+    // Close full-size image overlay when clicking outside the image
+    document.getElementById('overlay').addEventListener('click', function (event) {
+        if (event.target === this || event.target.tagName !== 'IMG') {
+            hideFullImage();
+        }
+    });
+
+    // Handle the start of a touch event
+    function handleTouchStart(event) {
+        const firstTouch = event.touches[0];
+        startX = firstTouch.clientX;
+    }
+
+    // Handle the movement during a touch event
+    function handleTouchMove(event) {
+        if (!startX) {
+            return;
+        }
+        let currentX = event.touches[0].clientX;
+        let diffX = startX - currentX;
+        if (Math.abs(diffX) > 50) { // Swipe threshold
+            if (diffX > 0) {
+                // Swipe left (next image)
+                currentIndex = (currentIndex === images.length - 1) ? 0 : currentIndex + 1;
+            } else {
+                // Swipe right (previous image)
+                currentIndex = (currentIndex === 0) ? images.length - 1 : currentIndex - 1;
+            }
+            showFullImage(images[currentIndex]);
+            startX = null; // Reset startX
+        }
+    }
+
+    // Handle keydown events (for controlling images in fullscreen mode)
+    function handleKeyDown(event) {
+        if (event.key === 'ArrowLeft') {
+            // Show the previous image in the gallery
+            currentIndex = (currentIndex === 0) ? images.length - 1 : currentIndex - 1;
+            showFullImage(images[currentIndex]);
+        } else if (event.key === 'ArrowRight') {
+            // Show the next image in the gallery
+            currentIndex = (currentIndex === images.length - 1) ? 0 : currentIndex + 1;
+            showFullImage(images[currentIndex]);
+        }
+    }
+</script>
+</body>
+</html>
